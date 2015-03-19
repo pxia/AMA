@@ -1,6 +1,10 @@
 
+import sys, util;
+
 def ask():
     print "ask"
+    articleFile = sys.argv[1]
+    nquestions  = int(sys.argv[2])
 
     D = {"a":[1,2,3], "b":[2], "c":[2,1]}
     print [k for k in D.keys() if len(D.get(k))==min([len(n) for n in D.values()])][0]
@@ -8,47 +12,50 @@ def ask():
 
 def answer():
     print "answer"
+    articleFile  = sys.argv[1]
+    questionFile = sys.argv[2]
 
-# assume D's values are all sorted
-def findPostNeighbor(curIndex, neighborKw, D):
-    # 'Find leftmost value greater than x'
-    i = bisect_right(D[neighborKw], curIndex)
-    if i != len(a):
-        return D[neighborKw][i]
-    raise ValueError
+    article      = readFile(article)
+    questions    = util.readFile(questionFile).splitlines()
 
-# assume document is accessible within the class, 
-# and is already tokenzied into a string list
+
+
+# assume document is accessible within the class,
+# and is already parsed into a raw string
 def locateKeywords(keywords):
-	D = {}
+    D = {}
+    for kw in keywords:
+        D[kw] = map(lambda m: m.start(), re.finditer(kw, document))
 
-	for kw in keywords:
-		D[kw] = [i for i, w in enumerate(document) if w == kw]
+    # find the area that the keywords are densest in
 
-	minAreaStart = 0	
-	minAreaEnd = len(document)
-	allOccurrences = [i for i, w in enumerate(document) if w in keywords]
-	firstArea = 0
-	areaMemberInd = []
+# 	for kw in keywords:
+# 		D[kw] = [i for i, w in enumerate(document) if w == kw]
 
-	# find the initial area
-	keywordToFind = keywords
-	while (len(keywordToFind) > 0):
-		if document[firstArea] in keywordToFind:
-			areaMemberInd += [firstArea]
-			keywordToFind.remove(document[area])
-		firstArea += 1
+# 	minAreaStart = 0	
+# 	minAreaEnd = len(document)
+# 	allOccurrences = [i for i, w in enumerate(document) if w in keywords]
+# 	firstArea = 0
+# 	areaMemberInd = []
 
-	curSmallestArea = firstArea
-	firstToDrop = document[areaMemberInd[0]]
-	firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
-	frontDelta = areaMemberInd[1] - firstToDrop
-	backDelta = firstToGet - areaMemberInd[-1]
-	if (backDelta < frontDelta):
-		curSmallestArea = curSmallestArea - frontDelta + backDelta
+# 	# find the initial area
+# 	keywordToFind = keywords
+# 	while (len(keywordToFind) > 0):
+# 		if document[firstArea] in keywordToFind:
+# 			areaMemberInd += [firstArea]
+# 			keywordToFind.remove(document[area])
+# 		firstArea += 1
 
-	areaMemberInd = areaMemberInd[1:]
-	areaMemberInd += []
+# 	curSmallestArea = firstArea
+# 	firstToDrop = document[areaMemberInd[0]]
+# 	firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
+# 	frontDelta = areaMemberInd[1] - firstToDrop
+# 	backDelta = firstToGet - areaMemberInd[-1]
+# 	if (backDelta < frontDelta):
+# 		curSmallestArea = curSmallestArea - frontDelta + backDelta
+
+# 	areaMemberInd = areaMemberInd[1:]
+# 	areaMemberInd += []
 
 
 
