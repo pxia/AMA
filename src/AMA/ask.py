@@ -42,7 +42,38 @@ def yesNoQuestion(text, tags):
             
 
 def whQuestion(text, tags):
-    return []
+    lemmatizer = WordNetLemmatizer()
+    verbIndex = None
+    beQuestion = True
+    questionVerb = ""
+    result = []
+    
+    for i in xrange(len(tags)):
+        (word, tag) = tags[i]
+        if (tag in verbTag):
+            verbIndex = i
+            if (word in beVerb):
+                questionVerb = str(word[0].upper() + word[1:])
+            else:
+                beQuestion = False
+                questionVerb = verbTag[tag]
+            break
+        
+    result += whoQuestion(text, tags, verbIndex)
+    return result
+
+def whoQuestion(text, tags, index):
+    question = []
+    result = []
+    if (index != None):
+        question.append("Who")
+            
+        for i in range(index, len(text)):
+            if ((i < len(text)-1) or (i == len(text)-1 and text[i].isalpha())):
+                question.append(text[i])
+        question.append("?")
+        result.append(" ".join(question))
+    return result
 
 def choiceQuestion(text, tags):
     return []
@@ -63,3 +94,5 @@ def questionGenerator(sentence):
 
 questionGenerator("Prime Minister Vladimir V. Putin is the country's paramount leader.")
 questionGenerator("Prime Minister Vladimir V. Putin returned to Moscow to oversee the federal response.")
+questionGenerator("Peter likes to do NLP homework.")
+questionGenerator("Peter wants to fuck 251.")
