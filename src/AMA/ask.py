@@ -1,10 +1,12 @@
 import nltk
+from nltk.stem.wordnet import WordNetLemmatizer
 
 beVerb = set(["is", "are", "was", "were", "am"])
 #verbTag = set(["VB", "VBD", "VBG", "VBN", "VBP", "VBZ"])
 verbTag = {"VB":"Do", "VBD":"Did", "VBG":"Do", "VBN":"Did", "VBP":"Do", "VBZ":"Does"}
 
 def yesNoQuestion(text, tags):
+    lemmatizer = WordNetLemmatizer()
     verbIndex = None
     beQuestion = True
     questionVerb = ""
@@ -15,7 +17,7 @@ def yesNoQuestion(text, tags):
         if (tag in verbTag):
             verbIndex = i
             if (word in beVerb):
-                questionVerb = word[0].upper() + word[1:]
+                questionVerb = str(word[0].upper() + word[1:])
             else:
                 beQuestion = False
                 questionVerb = verbTag[tag]
@@ -27,7 +29,9 @@ def yesNoQuestion(text, tags):
             result.append(text[i])
             
         if (not beQuestion):
-            result.append(text[verbIndex])
+            verb = text[verbIndex]
+            verb = str(lemmatizer.lemmatize(verb, 'v'))
+            result.append(verb)
             
         for i in range(verbIndex+1, len(text)):
             if ((i < len(text)-1) or (i == len(text)-1 and text[i].isalpha())):
