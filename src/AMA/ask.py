@@ -1,4 +1,4 @@
-import nltk, ne_report
+import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
 
 beVerb = set(["is", "are", "was", "were", "am"])
@@ -65,12 +65,8 @@ def whQuestion(text, tags):
 def whoQuestion(text, tags, index):
     question = []
     result = []
-
-    ne_tags = ne_report(tags)
     
     if (index != None):
-        for i in xrange(index):
-            
         question.append("Who")
             
         for i in range(index, len(text)):
