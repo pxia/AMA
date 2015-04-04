@@ -1,8 +1,5 @@
-<<<<<<< HEAD
+
 import nltk
-=======
-import nltk, ne_report
->>>>>>> 47ecb05b407fa3666cd165a0395821b05758ab07
 from nltk.stem.wordnet import WordNetLemmatizer
 
 beVerb = set(["is", "are", "was", "were", "am"])
@@ -70,11 +67,9 @@ def whoQuestion(text, tags, index):
     question = []
     result = []
 
-    ne_tags = ne_report(tags)
+    # ne_tags = ne_report(tags)
     
     if (index != None):
-        for i in xrange(index):
-            
         question.append("Who")
             
         for i in range(index, len(text)):
@@ -105,4 +100,4 @@ questionGenerator("Prime Minister Vladimir V. Putin is the country's paramount l
 questionGenerator("Prime Minister Vladimir V. Putin returned to Moscow to oversee the federal response.")
 
 questionGenerator("Peter likes to do NLP homework.")
-questionGenerator("Peter wants to fuck 251.")
+questionGenerator("Peter caught a fish.")

@@ -27,35 +27,35 @@ def locateKeywords(keywords):
     for kw in keywords:
         D[kw] = map(lambda m: m.start(), re.finditer(kw, document))
 
-    # find the area that the keywords are densest in
+    find the area that the keywords are densest in
 
-# 	for kw in keywords:
-# 		D[kw] = [i for i, w in enumerate(document) if w == kw]
+	for kw in keywords:
+		D[kw] = [i for i, w in enumerate(document) if w == kw]
 
-# 	minAreaStart = 0	
-# 	minAreaEnd = len(document)
-# 	allOccurrences = [i for i, w in enumerate(document) if w in keywords]
-# 	firstArea = 0
-# 	areaMemberInd = []
+	minAreaStart = 0	
+	minAreaEnd = len(document)
+	allOccurrences = [i for i, w in enumerate(document) if w in keywords]
+	firstArea = 0
+	areaMemberInd = []
 
-# 	# find the initial area
-# 	keywordToFind = keywords
-# 	while (len(keywordToFind) > 0):
-# 		if document[firstArea] in keywordToFind:
-# 			areaMemberInd += [firstArea]
-# 			keywordToFind.remove(document[area])
-# 		firstArea += 1
+	# find the initial area
+	keywordToFind = keywords
+	while (len(keywordToFind) > 0):
+		if document[firstArea] in keywordToFind:
+			areaMemberInd += [firstArea]
+			keywordToFind.remove(document[area])
+		firstArea += 1
 
-# 	curSmallestArea = firstArea
-# 	firstToDrop = document[areaMemberInd[0]]
-# 	firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
-# 	frontDelta = areaMemberInd[1] - firstToDrop
-# 	backDelta = firstToGet - areaMemberInd[-1]
-# 	if (backDelta < frontDelta):
-# 		curSmallestArea = curSmallestArea - frontDelta + backDelta
+	curSmallestArea = firstArea
+	firstToDrop = document[areaMemberInd[0]]
+	firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
+	frontDelta = areaMemberInd[1] - firstToDrop
+	backDelta = firstToGet - areaMemberInd[-1]
+	if (backDelta < frontDelta):
+		curSmallestArea = curSmallestArea - frontDelta + backDelta
 
-# 	areaMemberInd = areaMemberInd[1:]
-# 	areaMemberInd += []
+	areaMemberInd = areaMemberInd[1:]
+	areaMemberInd += []
 
 
 
