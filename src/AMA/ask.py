@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -66,8 +67,6 @@ def whQuestion(text, tags):
 def whoQuestion(text, tags, index):
     question = []
     result = []
-
-    # ne_tags = ne_report(tags)
     
     if (index != None):
         question.append("Who")
