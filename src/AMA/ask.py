@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 import nltk
 from nltk.stem.wordnet import WordNetLemmatizer
 
