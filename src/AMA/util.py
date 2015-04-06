@@ -11,6 +11,16 @@ def readFile(filename, mode="rt"):
         if (fin != None): fin.close()
     return contents
 
+def writeFile(filename, contents, mode="wt"):
+    # wt stands for "write text"
+    fout = None
+    try:
+        fout = open(filename, mode)
+        fout.write(contents)
+    finally:
+        if (fout != None): fout.close()
+    return True
+
 def pos_tag(sentence):
     return nltk.pos_tag(nltk.word_tokenize(sentence))
 
