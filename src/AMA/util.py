@@ -1,8 +1,15 @@
 import nltk
+import sys
 
-def readFile(filename):
-    with open(filename) as f:
-        return f.read()
+def readFile(filename, mode="rt"):
+    # rt stands for "read text"
+    fin = contents = None
+    try:
+        fin = open(filename, mode)
+        contents = fin.read()
+    finally:
+        if (fin != None): fin.close()
+    return contents
 
 def pos_tag(sentence):
     return nltk.pos_tag(nltk.word_tokenize(sentence))
