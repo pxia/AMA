@@ -2,6 +2,7 @@ import sys
 import nltk
 import re
 import ner
+import os
 
 import util
 from simplejson import loads
@@ -10,9 +11,16 @@ from nltk.stem.lancaster import LancasterStemmer
 
 
 
-print "Loading CoreNLP ... "
+# print "Loading CoreNLP ... "
+prevWd = os.getcwd()
+os.chdir(os.path.split(os.path.realpath(__file__))[0])
+
 corenlp_dir = "lib/stanford-corenlp-full-2014-08-27/"
 corenlp = StanfordCoreNLP(corenlp_dir)  # wait a few minutes...
+
+os.chdir(prevWd)
+
+
 VP_TAGS = ['VP', 'S', 'VB'] #, 'PP']
 SYN_TAGS = ['ADJP', 'ADVP', 'NP', 'PP', 'S', 'SBAR', 'SBARQ', 'SINV', 'SQ', 'VP', 'WHNP', 'WHPP']
 OBJ_TAGS = ['NP', 'ADJP', 'ADVP', 'PP']
@@ -125,7 +133,7 @@ def processPP(PP):
 
 
 def preprocess(sentences):
-    print "Start Processing ... "
+    # print "Start Processing ... "
 
     D1, D2, D3 = {}, {}, {}
     D = (D1, D2, D3)
@@ -167,8 +175,8 @@ def buildDatabase(D1, D2, D3):
     # D1 : relation_name -----> subject --> [(verb, object)] list
     # D2 : relation_name (verb) -----> subject --> [adv] list
     # D3 : relation_name (verb) -----> subject --> [adj] list
-    
-    # returns a dictionary of the form: subject ----> (list of) properties, where 
+
+    # returns a dictionary of the form: subject ----> (list of) properties, where
     # a subject's property in the result dictionary contains the relation's name
     # and a list of verb-object/adv/adj relations
 
@@ -178,7 +186,7 @@ def buildDatabase(D1, D2, D3):
             subject = subject.lower()
             if not subject in D:
                 D[subject] = []
-            
+
             D[subject] += [(relation_name, verb_object_properties)]
 
     for verb_name, inner_dict2 in D2.iteritems():
@@ -226,7 +234,7 @@ def restate_question_in_statement_form(question): # question is a string
     if (firstWord in WH_WORDS):
         if (secondWord in DO_WORDS):
             if (firstWord == 'what' or firstWord == 'which' or firstWord == 'who'):
-            
+
                 # parse out subject and verb, insert firstWord after them but before everything else (aux clause)
                 result = loads(corenlp.parse(question))['sentences'][0]
                 parsetree = result['parsetree']
@@ -257,7 +265,7 @@ def restate_question_in_statement_form(question): # question is a string
                 NP, VP = tree[0], tree[1]
                 subjects = list(set(getSubject(NP)))
                 (verbs, objects) = getVerbs(VP)
-                
+
                 VP = filter(lambda st: st.label() == 'VP', objects.subtrees())
                 NP = filter(lambda st: st.label() == 'NP', objects.subtrees())[0]
 
@@ -282,60 +290,61 @@ def restate_question_in_statement_form(question): # question is a string
             res = [" ".join(NP.leaves())] + [firstWord] + reduce(lambda x, y: x + y, map(lambda st: [" ".join(st.leaves())], tree[2:]))
     return " ".join(map(lambda x: str(x), res)) # get rid of weird utf8
 
-def answer(questions, D):
+def answer(question, D):
     st = LancasterStemmer()
 
-    for question in questions:
-        if question == "": continue
+    # for question in questions:
+    # if question == "": continue
 
-        reformed_question = restate_question_in_statement_form(question)
-        print reformed_question
+    reformed_question = restate_question_in_statement_form(question)
+    # print reformed_question
 
-        result = loads(corenlp.parse(reformed_question))['sentences'][0]
-        parsetree = result['parsetree']
-        tree = nltk.Tree.fromstring(parsetree)
+    result = loads(corenlp.parse(reformed_question))['sentences'][0]
+    parsetree = result['parsetree']
+    tree = nltk.Tree.fromstring(parsetree)
 
-        tree = tree[0]
-        if (type(tree) == nltk.tree.Tree) and (len(tree) >= 2):
-            NP, VP = tree[0], tree[1]
+    tree = tree[0]
+    if (type(tree) == nltk.tree.Tree) and (len(tree) >= 2):
+        NP, VP = tree[0], tree[1]
 
-            subjects = list(set(getSubject(NP)))
+        subjects = list(set(getSubject(NP)))
 
-            (verbs, objects) = getVerbs(VP)
+        (verbs, objects) = getVerbs(VP)
 
-            (index, objs) = getObjects(objects)
+        (index, objs) = getObjects(objects)
 
-            foundedAnswer = False
-            
-            if (D[subjects[0].lower()]):
-                for (v, o) in D[subjects[0].lower()]:
-                    if st.stem(verbs[0].lower()) == st.stem(v.lower()):
-                        firstWord = (question.split(" ")[0]).lower()
-                        if firstWord in WH_WORDS:
-                            print o[0]
-                            foundedAnswer = True
-                        elif firstWord in BE_WORDS:
-                            print "Yes." if st.stem(objs[0].lower()) == st.stem(o[0].lower()) else "No."
-                            foundedAnswer = True
-            else: # who case
-                for (sj, properties) in D.iteritems():
-                    for (v, p) in properties:
-                        if str(verbs[0]) == str(v) and str(p) == str(objs):
-                            print sj
-                            foundedAnswer = True
+        foundedAnswer = False
 
-            if not foundedAnswer:
-                print "I don't know man."
+        if (D[subjects[0].lower()]):
+            for (v, o) in D[subjects[0].lower()]:
+                if st.stem(verbs[0].lower()) == st.stem(v.lower()):
+                    firstWord = (question.split(" ")[0]).lower()
+                    if firstWord in WH_WORDS:
+                        return o[0]
+                        foundedAnswer = True
+                    elif firstWord in BE_WORDS:
+                        return "Yes." if st.stem(objs[0].lower()) == st.stem(o[0].lower()) else "No."
+                        foundedAnswer = True
+        else: # who case
+            for (sj, properties) in D.iteritems():
+                for (v, p) in properties:
+                    if str(verbs[0]) == str(v) and str(p) == str(objs):
+                        return sj
+                        foundedAnswer = True
 
-            
+        if not foundedAnswer:
+            return "I don't know man."
+
+
 
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-data = util.readFile("text/0.txt").decode('utf8')
-sentences = tokenizer.tokenize(data)
 
-(D1, D2, D3) = preprocess(sentences)
-D = buildDatabase(D1, D2, D3)
-print D
-qs = util.readFile("text/questions.txt").decode('utf8')
-questions = tokenizer.tokenize(qs)
-print answer(questions, D)
+# data = util.readFile("text/0.txt").decode('utf8')
+# sentences = tokenizer.tokenize(data)
+
+# (D1, D2, D3) = preprocess(sentences)
+# D = buildDatabase(D1, D2, D3)
+# print D
+# qs = util.readFile("text/questions.txt").decode('utf8')
+# questions = tokenizer.tokenize(qs)
+# print answer(questions, D)

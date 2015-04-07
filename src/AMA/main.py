@@ -1,23 +1,29 @@
-
-import sys, util;
+from Article import Article
+from util import *
+import sys;
 
 def ask():
-    print "ask"
+    # print "ask"
     articleFile = sys.argv[1]
     nquestions  = int(sys.argv[2])
+    article     = readFile(articleFile)
+    A           = Article(article)
+    for q in A.ask(nquestions):
+        print q
 
-    D = {"a":[1,2,3], "b":[2], "c":[2,1]}
-    print [k for k in D.keys() if len(D.get(k))==min([len(n) for n in D.values()])][0]
 
 
 def answer():
-    print "answer"
+    # print "answer"
     articleFile  = sys.argv[1]
     questionFile = sys.argv[2]
 
-    article      = readFile(article)
+    article      = readFile(articleFile)
     questions    = util.readFile(questionFile).splitlines()
-
+    A            = Article(A)
+    for question in questions:
+        if len(question) != 0:
+            A.answer(question)
 
 
 # assume document is accessible within the class,
@@ -27,35 +33,35 @@ def locateKeywords(keywords):
     for kw in keywords:
         D[kw] = map(lambda m: m.start(), re.finditer(kw, document))
 
-    find the area that the keywords are densest in
+    # find the area that the keywords are densest in
 
-	for kw in keywords:
-		D[kw] = [i for i, w in enumerate(document) if w == kw]
+    for kw in keywords:
+        D[kw] = [i for i, w in enumerate(document) if w == kw]
 
-	minAreaStart = 0	
-	minAreaEnd = len(document)
-	allOccurrences = [i for i, w in enumerate(document) if w in keywords]
-	firstArea = 0
-	areaMemberInd = []
+    minAreaStart = 0
+    minAreaEnd = len(document)
+    allOccurrences = [i for i, w in enumerate(document) if w in keywords]
+    firstArea = 0
+    areaMemberInd = []
 
-	# find the initial area
-	keywordToFind = keywords
-	while (len(keywordToFind) > 0):
-		if document[firstArea] in keywordToFind:
-			areaMemberInd += [firstArea]
-			keywordToFind.remove(document[area])
-		firstArea += 1
+    # find the initial area
+    keywordToFind = keywords
+    while (len(keywordToFind) > 0):
+        if document[firstArea] in keywordToFind:
+            areaMemberInd += [firstArea]
+            keywordToFind.remove(document[area])
+        firstArea += 1
 
-	curSmallestArea = firstArea
-	firstToDrop = document[areaMemberInd[0]]
-	firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
-	frontDelta = areaMemberInd[1] - firstToDrop
-	backDelta = firstToGet - areaMemberInd[-1]
-	if (backDelta < frontDelta):
-		curSmallestArea = curSmallestArea - frontDelta + backDelta
+    curSmallestArea = firstArea
+    firstToDrop = document[areaMemberInd[0]]
+    firstToGet = findPostNeighbor(areaMemberInd[-1], firstToDrop, D)
+    frontDelta = areaMemberInd[1] - firstToDrop
+    backDelta = firstToGet - areaMemberInd[-1]
+    if (backDelta < frontDelta):
+        curSmallestArea = curSmallestArea - frontDelta + backDelta
 
-	areaMemberInd = areaMemberInd[1:]
-	areaMemberInd += []
+    areaMemberInd = areaMemberInd[1:]
+    areaMemberInd += []
 
 
 

@@ -11,7 +11,7 @@ def yesNoQuestion(text, tags):
     beQuestion = True
     questionVerb = ""
     result = []
-    
+
     for i in xrange(len(tags)):
         (word, tag) = tags[i]
         if (tag in verbTag):
@@ -27,19 +27,19 @@ def yesNoQuestion(text, tags):
         result.append(questionVerb)
         for i in xrange(verbIndex):
             result.append(text[i])
-            
+
         if (not beQuestion):
             verb = text[verbIndex]
             verb = str(lemmatizer.lemmatize(verb, 'v'))
             result.append(verb)
-            
+
         for i in range(verbIndex+1, len(text)):
             if ((i < len(text)-1) or (i == len(text)-1 and text[i].isalpha())):
                 result.append(text[i])
         result.append("?")
 
     return [" ".join(result)]
-            
+
 
 def whQuestion(text, tags):
     lemmatizer = WordNetLemmatizer()
@@ -47,7 +47,7 @@ def whQuestion(text, tags):
     beQuestion = True
     questionVerb = ""
     result = []
-    
+
     for i in xrange(len(tags)):
         (word, tag) = tags[i]
         if (tag in verbTag):
@@ -58,17 +58,17 @@ def whQuestion(text, tags):
                 beQuestion = False
                 questionVerb = verbTag[tag]
             break
-        
+
     result += whoQuestion(text, tags, verbIndex)
     return result
 
 def whoQuestion(text, tags, index):
     question = []
     result = []
-    
+
     if (index != None):
         question.append("Who")
-            
+
         for i in range(index, len(text)):
             if ((i < len(text)-1) or (i == len(text)-1 and text[i].isalpha())):
                 question.append(text[i])
@@ -82,19 +82,18 @@ def choiceQuestion(text, tags):
 
 def questionGenerator(sentence):
     result = []
-    
+
     text = nltk.word_tokenize(sentence)
     tags = nltk.pos_tag(text)
 
     result += yesNoQuestion(text, tags)
     result += whQuestion(text, tags)
     result += choiceQuestion(text, tags)
+    return result
 
-    print result
 
-
-questionGenerator("Prime Minister Vladimir V. Putin is the country's paramount leader.")
-questionGenerator("Prime Minister Vladimir V. Putin returned to Moscow to oversee the federal response.")
-
-questionGenerator("Peter likes to do NLP homework.")
-questionGenerator("Peter caught a fish.")
+if __name__ == '__main__':
+    print questionGenerator("Prime Minister Vladimir V. Putin is the country's paramount leader.")
+    print questionGenerator("Prime Minister Vladimir V. Putin returned to Moscow to oversee the federal response.")
+    print questionGenerator("Peter likes to do NLP homework.")
+    print questionGenerator("Peter caught a fish.")
