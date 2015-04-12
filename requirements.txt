@@ -1,0 +1,4 @@
+nltk
+ner
+simplejson
+pexpect
