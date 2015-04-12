@@ -6,7 +6,7 @@ def ask():
     # print "ask"
     articleFile = sys.argv[1]
     nquestions  = int(sys.argv[2])
-    article     = readFile(articleFile)
+    article     = normalize(readFile(articleFile))
     A           = Article(article)
     for q in A.ask(nquestions):
         print q
@@ -18,7 +18,7 @@ def answer():
     articleFile  = sys.argv[1]
     questionFile = sys.argv[2]
 
-    article      = readFile(articleFile)
+    article      = normalize(readFile(articleFile))
     questions    = util.readFile(questionFile).splitlines()
     A            = Article(A)
     for question in questions:

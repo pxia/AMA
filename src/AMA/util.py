@@ -1,5 +1,6 @@
 import nltk
 import sys
+import unicodedata
 
 def readFile(filename, mode="rt"):
     # rt stands for "read text"
@@ -20,6 +21,13 @@ def writeFile(filename, contents, mode="wt"):
     finally:
         if (fout != None): fout.close()
     return True
+
+
+def normalize(s):
+    s = s.decode("utf8")
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore")
+
+
 
 def pos_tag(sentence):
     return nltk.pos_tag(nltk.word_tokenize(sentence))
