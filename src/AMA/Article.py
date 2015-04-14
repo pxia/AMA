@@ -16,8 +16,8 @@ class Article(object):
         self.factuals = extractFactual(text)
         # preprocessed = preprocess(tokenizer.tokenize(self.factuals))
         # self.D = buildDatabase(*preprocessed)
-        (D1, D2, D3) = preprocess(tokenizer.tokenize(self.factuals))
-        self.D = buildDatabase(D1, D2, D3)
+        (self.D1, self.D2, self.D3) = preprocess(tokenizer.tokenize(self.factuals))
+        self.D = buildDatabase(self.D1, self.D2, self.D3)
 
     def sentencesContainsKeywords(self, kws):
         """"""
@@ -34,7 +34,7 @@ class Article(object):
     def answer(self, question):
         # kws = extractKws(pos_tag(question))
         # releventSent = self.sentencesContainsKeywords(kws)
-        return answer(question, self.D)
+        return answer(question, self.D, self.D1, self.D2, self.D3)
 
     def ask(self, n):
         l = []
