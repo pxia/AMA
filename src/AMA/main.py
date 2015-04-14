@@ -1,26 +1,29 @@
 from Article import Article
 from util import *
 import sys;
+from bs4 import BeautifulSoup
+
 
 def ask():
     # print "ask"
     articleFile = sys.argv[1]
     nquestions  = int(sys.argv[2])
-    article     = normalize(readFile(articleFile))
+    article     = getContent(readFile(articleFile))
+    article     = "\n".join(map(normalize, article))
     A           = Article(article)
+    # print A.D
     for q in A.ask(nquestions):
         print q
-
-
 
 def answer():
     # print "answer"
     articleFile  = sys.argv[1]
     questionFile = sys.argv[2]
+    article      = getContent(readFile(articleFile))
+    article     = "\n".join(map(normalize, article))
 
-    article      = normalize(readFile(articleFile))
-    questions    = util.readFile(questionFile).splitlines()
-    A            = Article(A)
+    questions    = readFile(questionFile).splitlines()
+    A            = Article(article)
     for question in questions:
         if len(question) != 0:
             A.answer(question)

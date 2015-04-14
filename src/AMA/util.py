@@ -1,6 +1,7 @@
 import nltk
 import sys
 import unicodedata
+from bs4 import BeautifulSoup
 
 def readFile(filename, mode="rt"):
     # rt stands for "read text"
@@ -22,12 +23,16 @@ def writeFile(filename, contents, mode="wt"):
         if (fout != None): fout.close()
     return True
 
+def getContent(html):
+    """
+    Get rid of titles, references and other shit.
+    """
+    soup = BeautifulSoup(html)
+    return [p.get_text() for p in soup.find_all('p')]
 
 def normalize(s):
-    s = s.decode("utf8")
+    # s = s.decode("utf8")
     return unicodedata.normalize("NFKD", s).encode("ascii", "ignore")
-
-
 
 def pos_tag(sentence):
     return nltk.pos_tag(nltk.word_tokenize(sentence))
@@ -49,5 +54,6 @@ def extractKws(sentence):
         [tuple([word]) for (word, label) in sentence if label.startswith("NN")]
 
 if __name__ == '__main__':
-    pt = pos_tag("Welcome to Carnegie Mellon University.")
-    print extractKws(pt)
+    s = readFile("../../test/concise_html/cities/a1.htm")
+    for para in getContent(s):
+        print repr(para)
