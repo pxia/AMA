@@ -5,6 +5,7 @@ import ner
 import os
 
 import util
+from random import random
 from simplejson import loads
 from lib.corenlp import StanfordCoreNLP
 from nltk.stem.lancaster import LancasterStemmer
@@ -22,6 +23,7 @@ os.chdir(prevWd)
 
 
 VP_TAGS = ['VP', 'S', 'VB'] #, 'PP']
+VERB_TAGS = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
 SYN_TAGS = ['ADJP', 'ADVP', 'NP', 'PP', 'S', 'SBAR', 'SBARQ', 'SINV', 'SQ', 'VP', 'WHNP', 'WHPP']
 OBJ_TAGS = ['NP', 'ADJP', 'ADVP', 'PP']
 NOUN_TAGS = ['NN', 'NNP', 'NNS', 'NNPS']
@@ -29,6 +31,8 @@ ADJ_TAGS = ['JJ', 'JJR', 'JJS']
 ADV_TAGS = ['RB', 'RBR', 'RBS', 'RP']
 WH_TAGS = ['WHADJP', 'WHAVP', 'WHNP', 'WHPP']
 WH_WORDS = ['what', 'when', 'why', 'who', 'whose', 'which', 'where']
+H_WORDS = ['how']
+H_PHRASE = ['how many', 'how much', 'how long', 'how far', 'how often']
 BE_WORDS = ['is', 'are', 'were', 'was']
 DO_WORDS = ['do', 'does', 'did']
 
@@ -46,7 +50,9 @@ def getVerbs(VP):
     if (type(VP) != nltk.tree.Tree):
         return ([], VP)
 
-    if (VP.label() not in VP_TAGS):
+    if (VP.label() in VERB_TAGS):
+        return ([" ".join(VP.leaves())], VP)
+    elif (VP.label() not in VP_TAGS):
         return ([], VP)
     else:
         if (len(VP) == 1):
@@ -334,7 +340,11 @@ def answer(question, D):
             return "I don't know man."
 """
 
-
+def binomial(num):
+    if (random() <= num):
+        return True
+    else:
+        return False
 
 def keepLast(l):
     result = []
@@ -446,7 +456,6 @@ def answerSQ(tree):
                             words = NP.leaves()
                         else:
                             words = [NP]
-                        words = NP.leaves()
                         subject = keepLast(words[:-1])
                         verbs = [words[-1]]
                         (index, objs) = getObjects(VP)
@@ -501,13 +510,196 @@ def answerSQ(tree):
         else:
             statement = " ".join([subject[-1], objs[-1]])
 
+    subject = list(set(subject))
+    verbs = list(set(verbs))
+    objs = list(set(objs))
+
     return (subject, verbs, objs, statement)
 
 
-def answerSBARQ(tree):
-    pass
+def parseSBARQ(tree):
+    verbs = []
+    subjs = []
+    objs = []
+    statement = ""
 
-def answer(question, D):
+    if (tree[0].label() == "VP"):
+        tree = tree[0]
+        tree = trimTree(tree)
+
+        qVerb = " ".join(tree[0].leaves())
+
+        if (len(tree) == 2):
+            S = tree[1]
+            statement = " ".join(S.leaves())
+
+            if (qVerb.lower() in DO_WORDS):
+                S = trimTree(S)
+
+                if (len(S) == 2):
+                    NP = trimTree(S[0])
+                    VP = trimTree(S[1])
+
+                    if (VP.label() == "VP"):
+                        subjs = getSubject(NP)
+                        (verbs, objects) = getVerbs(VP)
+                        (index, objs) = getObjects(objects)
+                    else:
+                        if (type(NP) == nltk.tree.Tree):
+                            words = NP.leaves()
+                        else:
+                            words = [NP]
+                        subjs = keepLast(words[:-1])
+                        verbs = [words[-1]]
+                        (index, objs) = getObjects(VP)
+                else:
+                    VP = findVP(S)
+                    if (VP != []):
+                        words = S.leaves()
+                        VPwords = VP.leaves()
+                        index = words.index(VPwords[0])
+                        NPwords = words[:index]
+
+                        subjs = keepLast(NPwords)
+                        (verbs, objects) = getVerbs(VP)
+                        (index, objs) = getObjects(objects)
+            else:
+                (verbs, objects) = getVerbs(tree)
+                (index, objs) = getObjects(objects)
+
+        else:
+            if (qVerb.lower() not in DO_WORDS):
+                verbs = [qVerb]
+                S = tree[1:]
+                res = []
+                for sub in S:
+                    res.append(" ".join(sub.leaves()))
+                    objs.append(" ".join(res))
+            else:
+                S = tree[1:]
+                parts = []
+                for sub in S:
+                    parts.append(" ".join(sub.leaves()))
+                statement = " ".join(parts)
+
+                NP = trimTree(S[0])
+                VP = trimTree(S[1])
+
+                if (VP.label() == "VP"):
+                    subjs = getSubject(NP)
+                    (verbs, objects) = getVerbs(VP)
+                    (index, objs) = getObjects(objects)
+                else:
+                    if (type(NP) == nltk.tree.Tree):
+                        words = NP.leaves()
+                    else:
+                        words = [NP]
+                    subjs = keepLast(words[:-1])
+                    verbs = [words[-1]]
+                    (index, objs) = getObjects(VP)
+
+    else:
+        verb = " ".join(tree[0].leaves())
+        NP = tree[1]
+        VP = tree[2]
+        if verb in DO_WORDS:
+            subjs = getSubject(NP)
+            if type(VP) == nltk.tree.Tree:
+                verbs = [VP]
+                objs = []
+            if (len(VP) == 1):
+                verbs = [" ".join(VP.leaves())]
+                objs = []
+            else:
+                (verbs, objects) = getVerbs(VP)
+                (index, objs) = getObjects(objects)
+        else:
+            subjs = getSubject(NP)
+            if (VP.label() == "VP"):
+
+                if (len(VP) == 1):
+                    verbs = [" ".join(VP.leaves())]
+                    objs = []
+                else:
+                    (verbs, objects) = getVerbs(VP)
+                    (index, objs) = getObjects(objects)
+
+                for i in xrange(len(verbs)):
+                    verbs[i] = verb + " " + verbs[i]
+
+            else:
+                (index, objs) = getObjects(VP)
+                verbs = [verb]
+
+    subjs = list(set(subjs))
+    verbs = list(set(verbs))
+    objs = list(set(objs))
+
+    return (subjs, verbs, objs, statement)
+
+def extractWhWord(WH):
+    words = WH.leaves()
+    for i in xrange(len(words)):
+        word = words[i].lower()
+        if word in WH_WORDS:
+            return word
+        if word in H_WORDS:
+            if (i != len(words)-1):
+                return word + " " + words[i+1]
+            else:
+                return word
+    return ""
+
+
+def findMatchForSBARQ(subjs, verbs, objs, whs, D, D1, D2, D3):
+    answer = []
+    finded = False
+    Ds = (D1, D2, D3)
+    if subjs:
+        for subj in subjs:
+            subj = subj.lower()
+            if (subj in D):
+                tuples = D[subj]
+                for (v, o) in tuples:
+                    if (eitherContains(v, verbs)):
+                        answer.append(subj + " " + v + " " + max(o))
+    if (answer): return max(answer)
+
+    if verbs:
+        for verb in verbs:
+            verb = verb.lower()
+            for d in Ds:
+                if (verb in d):
+                    mapping = d[verb]
+                    for subj in mapping:
+                        o = mapping[subj]
+                        if (eitherContains(o, objs)):
+                            answer.append(subj + " " + verb + " " + max(o))
+    if (answer): return max(answer)
+
+    return ""
+
+
+
+
+
+def answerSBARQ(tree):
+    if (len(tree) >= 2):
+        WH = tree[0]
+        SQ = tree[1]
+        try:
+            (subjs, verbs, objs, statement) = parseSBARQ(SQ)
+            whs = extractWhWord(WH)
+            #print tree
+            #print subjs
+            #print verbs
+            #print objs
+            #print statement
+            return (subjs, verbs, objs, whs, statement)
+        except:
+            pass
+
+def answer(question, D, D1, D2, D3):
     st = LancasterStemmer()
 
     # parse out subject and verb, insert firstWord after them but before everything else (aux clause)
@@ -516,45 +708,67 @@ def answer(question, D):
     tree = nltk.Tree.fromstring(parsetree)
     tree = tree[0]
     finded = True
-    #print tree
-    #print
 
 
+    # Handle the SQ case, which is for Yes/No question
     if (tree.label() == "SQ"):
-        (subjs, verbs, objs, statement) = answerSQ(tree)
-        finded = findMatchForSQ(subjs, verbs, objs, D)
-        #print subjs
-        #print verbs
-        #print objs
-        #print statement
-        #print
+        try:
+            (subjs, verbs, objs, statement) = answerSQ(tree) # get parsed components
+            finded = findMatchForSQ(subjs, verbs, objs, D) # get answer from database
+        except:
+            finded = binomial(0.7)
 
         if finded:
             return "Yes."
         else:
             # NEED TO CHECK STATEMENT !!!
             return "No."
+
+    # Handle the SBARQ case, which is for WH/H questions
     elif (tree.label() == "SBARQ"):
-        #print tree
-        #print
-        return "Fuck you!"
+        answer = ""
+        try:
+            (subjs, verbs, objs, whs, statement) = answerSBARQ(tree)
+            answer = findMatchForSBARQ(subjs, verbs, objs, whs, D, D1, D2, D3)
+        except:
+            return "Sorry, I don't know."
+        if answer:
+            return answer
+        else:
+            return "Sorry, I don't know."
+
+    # Handle other cases, mostly are just Yes/No questions
     elif (tree.label() == "S"):
         if (tree[0].label() == "VP"):
-            (subjs, verbs, objs, statement) = answerSQ(tree)
-            finded = findMatchForSQ(subjs, verbs, objs, D)
+            try:
+                (subjs, verbs, objs, statement) = answerSQ(tree)
+                finded = findMatchForSQ(subjs, verbs, objs, D)
+            except:
+                finded = binomial(0.7)
+
             if finded:
                 return "Yes."
             else:
                 # NEED TO CHECK STATEMENT !!!
                 return "No."
         else:
-            return "Fuck you!"
+            return "Sorry, I don't know."
     else:
-        return "Fuck you!"
+        return "Sorry, I don't know."
+
+
+
+
+
+
+
+
+
+
 
 sentences = []
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-#for i in xrange(1):
+#for i in xrange(40):
 #    path = "../../test/text/q" + str(i) + ".txt"
 #    data = util.readFile(path).decode('utf8')
 #    sentences += tokenizer.tokenize(data)
@@ -583,4 +797,4 @@ q12 = "Do cellos have an endpin?"
 Q = [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12]
 
 #for q in sentences:
-#    answer(q, {})
+#    answer(q, {}, {}, {}, {})
