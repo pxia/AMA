@@ -27,13 +27,14 @@ OBJ_TAGS = ['NP', 'ADJP', 'ADVP', 'PP']
 NOUN_TAGS = ['NN', 'NNP', 'NNS', 'NNPS']
 ADJ_TAGS = ['JJ', 'JJR', 'JJS']
 ADV_TAGS = ['RB', 'RBR', 'RBS', 'RP']
+WH_TAGS = ['WHADJP', 'WHAVP', 'WHNP', 'WHPP']
 WH_WORDS = ['what', 'when', 'why', 'who', 'whose', 'which', 'where']
 BE_WORDS = ['is', 'are', 'were', 'was']
 DO_WORDS = ['do', 'does', 'did']
 
 def getSubject(NP):
     if type(NP) != nltk.tree.Tree:
-        return []
+        return [NP]
     else:
         last = NP[-1]
         l = getSubject(last)
@@ -42,6 +43,9 @@ def getSubject(NP):
         return l
 
 def getVerbs(VP):
+    if (type(VP) != nltk.tree.Tree):
+        return ([], VP)
+
     if (VP.label() not in VP_TAGS):
         return ([], VP)
     else:
@@ -58,12 +62,12 @@ def getVerbs(VP):
             verb = " ".join(VB.leaves()) + " " + verb
         else:
             verb = " ".join(VB.leaves())
-        return ([verb]# + verbs
+        return ([verb] + verbs
             , objects)
 
 def getObjects(objects):
     # if objects == None:
-
+    if (type(objects) != nltk.tree.Tree): return (-1, [])
     label = objects.label()
     if (label == 'NP'):
         return (0, processObjects(objects))
@@ -95,13 +99,13 @@ def processObjects(objects):
 
 def processNP(NP):
     if (type(NP) != nltk.tree.Tree): return []
-    # if (NP.label() in NOUN_TAGS):
+    #if (NP.label() in NOUN_TAGS):
     #     return [NP[0]]
-    # else:
-        # nouns = []
-        # for sub in NP:
-        #     nouns += processNP(sub)
-        # return nouns
+    #else:
+    #    nouns = []
+    #    for sub in NP:
+    #        nouns += processNP(sub)
+    #    return nouns
     return [" ".join(NP.leaves())]
 
 def processADJP(ADJP):
@@ -139,7 +143,10 @@ def preprocess(sentences):
     D = (D1, D2, D3)
 
     for sent in sentences:
-        if sent == "": continue
+        if len(sent) > 1000: continue
+        if len(sent) == 0: continue
+        if len(nltk.word_tokenize(sent)) <= 4: continue
+
         result = loads(corenlp.parse(sent))['sentences'][0]
         #dependencies = result['dependencies']
         parsetree = result['parsetree']
@@ -155,11 +162,15 @@ def preprocess(sentences):
 
             (index, objs) = getObjects(objects)
 
+            if (index < 0): continue
+
             mapping = D[index]
             for verb in verbs:
+                verb = verb.lower()
                 if verb not in mapping:
                     mapping[verb] = {}
                 for subj in subjects:
+                    subj = subj.lower()
                     if subj not in mapping[verb]:
                         mapping[verb][subj] = []
                     mapping[verb][subj].extend(objs)
@@ -205,23 +216,30 @@ def buildDatabase(D1, D2, D3):
 
     return D
 
-# D1 = {"IN": {"Beth":[("live", "Pittsburgh"), ("born", "Nanjing")], "Joe":[("swim","pool"), ("study", "Gates")],
+#D1 = {"IN": {"Beth":[("live", "Pittsburgh"), ("born", "Nanjing")], "Joe":[("swim","pool"), ("study", "Gates")],
 #            "Nathan":[("smoke","basement"), ("eat", "kitchen")]},
 #     "ON": {"Beth":[("jump","table")], "Nathan":[("cry", "shoulder")]}}
 
-# D2 = {"DANCE": {"Beth":["beautifully", "elegantly"], "Joe":["passionately","romantically"]},
+#D2 = {"DANCE": {"Beth":["beautifully", "elegantly"], "Joe":["passionately","romantically"]},
 #     "EAT": {"Nathan":["fast"], "Joe":["slowly"]}}
 
-# D3 = {"BE": {"Beth":["medium-height", "lean","sporty"], "Nathan":["beardy", "lazy"], "Joe":["skinny"], "Jack":["dizzy", "blond"]},
+#D3 = {"BE": {"Beth":["medium-height", "lean","sporty"], "Nathan":["beardy", "lazy"], "Joe":["skinny"], "Jack":["dizzy", "blond"]},
 #     "BECOME": {"Jack":["an actor", "the student president"], "Nathan":["musician", "fat"]}}
 
-# print buildDatabase(D1, D2, D3)
+#print buildDatabase(D1, D2, D3)
 
 
+"""
 def restate_question_in_statement_form(question): # question is a string
     q = (filter(lambda ch: ch.isspace() or ch.isalpha(), question)).split(" ")
     firstWord = q[0].lower()
     secondWord = q[1].lower()
+
+    # parse out subject and verb, insert firstWord after them but before everything else (aux clause)
+    result = loads(corenlp.parse(question))['sentences'][0]
+    parsetree = result['parsetree']
+    tree = nltk.Tree.fromstring(parsetree)
+    tree = tree[0]
 
     # what does he...? => he does what
     # when do we meet? => we meet when?
@@ -234,14 +252,6 @@ def restate_question_in_statement_form(question): # question is a string
     if (firstWord in WH_WORDS):
         if (secondWord in DO_WORDS):
             if (firstWord == 'what' or firstWord == 'which' or firstWord == 'who'):
-
-                # parse out subject and verb, insert firstWord after them but before everything else (aux clause)
-                result = loads(corenlp.parse(question))['sentences'][0]
-                parsetree = result['parsetree']
-                tree = nltk.Tree.fromstring(parsetree)
-
-                tree = tree[0]
-
                 if (type(tree) == nltk.tree.Tree) and (len(tree) >= 2):
                     NP, VP = tree[0], tree[1]
                     verb = filter(lambda st: st.label() == 'VP', VP.subtrees())[0]
@@ -254,13 +264,6 @@ def restate_question_in_statement_form(question): # question is a string
                 res = q[2:] + [firstWord]
 
         elif (secondWord in BE_WORDS):
-            # parse out subject, insert secondWord, firstWord after it but before everything else (aux clause)
-            result = loads(corenlp.parse(question))['sentences'][0]
-            parsetree = result['parsetree']
-            tree = nltk.Tree.fromstring(parsetree)
-
-            tree = tree[0]
-
             if (type(tree) == nltk.tree.Tree) and (len(tree) >= 2):
                 NP, VP = tree[0], tree[1]
                 subjects = list(set(getSubject(NP)))
@@ -279,15 +282,10 @@ def restate_question_in_statement_form(question): # question is a string
                     res = [" ".join(NP.leaves())] + [secondWord, firstWord]
 
     elif (firstWord in BE_WORDS):
-        result = loads(corenlp.parse(question))['sentences'][0]
-        parsetree = result['parsetree']
-        tree = nltk.Tree.fromstring(parsetree)
-
-        tree = tree[0]
-
         if (type(tree) == nltk.tree.Tree) and (len(tree) >= 2):
             NP = tree[1]
             res = [" ".join(NP.leaves())] + [firstWord] + reduce(lambda x, y: x + y, map(lambda st: [" ".join(st.leaves())], tree[2:]))
+
     return " ".join(map(lambda x: str(x), res)) # get rid of weird utf8
 
 def answer(question, D):
@@ -297,7 +295,7 @@ def answer(question, D):
     # if question == "": continue
 
     reformed_question = restate_question_in_statement_form(question)
-    # print reformed_question
+    print reformed_question
 
     result = loads(corenlp.parse(reformed_question))['sentences'][0]
     parsetree = result['parsetree']
@@ -334,13 +332,232 @@ def answer(question, D):
 
         if not foundedAnswer:
             return "I don't know man."
+"""
 
 
 
+def keepLast(l):
+    result = []
+    s = []
+    for word in l[::-1]:
+        s = [word] + s
+        result.append(" ".join(s))
+    return result
+
+def keepFirst(l):
+    result = []
+    s = []
+    for word in l:
+        s = s + [word]
+        result.append(" ".join(s))
+    return result
+
+def findVP(tree):
+    F = []
+    NP = []
+
+    if type(tree) != nltk.tree.Tree:
+        return []
+    if tree.label() in VP_TAGS:
+        return tree
+    else:
+        F.append(tree)
+        while F:
+            T = F.pop(0)
+            for sub in T:
+                if type(sub) != nltk.tree.Tree:
+                    continue
+                if sub.label() in VP_TAGS:
+                    return sub
+                F.append(sub)
+        return []
+
+def trimTree(tree):
+    while (len(tree) == 1):
+        tree = tree[0]
+    return tree
+
+
+
+
+def eitherContains(phrase, l):
+    if type(phrase) == str:
+        phrase = phrase.lower()
+        for tokens in l:
+            tokens = tokens.lower()
+            if phrase in tokens:
+                return True
+            if tokens in phrase:
+                return True
+        return False
+    else:
+        for p in phrase:
+            p = p.lower()
+            for tokens in l:
+                tokens = tokens.lower()
+                if p in tokens:
+                    return True
+                if tokens in p:
+                    return True
+        return False
+
+def findMatchForSQ(subjs, verbs, objs, D):
+    finded = False
+    for subj in subjs:
+        subj = subj.lower()
+        if subj in D:
+            tuples = D[subj]
+            for (v, o) in tuples:
+                if (eitherContains(v, verbs) and
+                    eitherContains(o, objs)):
+                    finded = True
+    return finded
+
+
+
+def answerSQ(tree):
+    verbs = []
+    subject = []
+    objs = []
+
+    if (tree[0].label() == "VP"):
+        tree = tree[0]
+        tree = trimTree(tree)
+
+        qVerb = " ".join(tree[0].leaves())
+
+        if (len(tree) == 2):
+            S = tree[1]
+            statement = " ".join(S.leaves())
+
+            if (qVerb.lower() in DO_WORDS):
+                S = trimTree(S)
+
+                if (len(S) == 2):
+                    NP = trimTree(S[0])
+                    VP = trimTree(S[1])
+
+                    if (VP.label() == "VP"):
+                        subject = getSubject(NP)
+                        (verbs, objects) = getVerbs(VP)
+                        (index, objs) = getObjects(objects)
+                    else:
+                        if (type(NP) == nltk.tree.Tree):
+                            words = NP.leaves()
+                        else:
+                            words = [NP]
+                        words = NP.leaves()
+                        subject = keepLast(words[:-1])
+                        verbs = [words[-1]]
+                        (index, objs) = getObjects(VP)
+                else:
+                    VP = findVP(S)
+                    if (VP != []):
+                        words = S.leaves()
+                        VPwords = VP.leaves()
+                        index = words.index(VPwords[0])
+                        NPwords = words[:index]
+
+                        subject = keepLast(NPwords)
+                        (verbs, objects) = getVerbs(VP)
+                        (index, objs) = getObjects(objects)
+
+        else:
+            S = tree[1:]
+            parts = []
+            for sub in S:
+                parts.append(" ".join(sub.leaves()))
+            statement = " ".join(parts)
+
+            NP = trimTree(S[0])
+            VP = trimTree(S[1])
+
+            if (VP.label() == "VP"):
+                subject = getSubject(NP)
+                (verbs, objects) = getVerbs(VP)
+                (index, objs) = getObjects(objects)
+            else:
+                if (type(NP) == nltk.tree.Tree):
+                    words = NP.leaves()
+                else:
+                    words = [NP]
+                subject = keepLast(words[:-1])
+                verbs = [words[-1]]
+                (index, objs) = getObjects(VP)
+    else:
+        verbs = [" ".join(tree[0].leaves())]
+        subject = getSubject(tree[1])
+        objects = tree[2]
+        objs = []
+        obj = []
+        for sub in objects:
+            if (type(sub) == nltk.tree.Tree):
+                obj.append(" ".join(sub.leaves()))
+            else:
+                obj.append(sub)
+            objs.append(" ".join(obj))
+        if (verbs[0].lower() in BE_WORDS):
+            statement = " ".join([subject[-1], verbs[0], objs[-1]])
+        else:
+            statement = " ".join([subject[-1], objs[-1]])
+
+    return (subject, verbs, objs, statement)
+
+
+def answerSBARQ(tree):
+    pass
+
+def answer(question, D):
+    st = LancasterStemmer()
+
+    # parse out subject and verb, insert firstWord after them but before everything else (aux clause)
+    result = loads(corenlp.parse(question))['sentences'][0]
+    parsetree = result['parsetree']
+    tree = nltk.Tree.fromstring(parsetree)
+    tree = tree[0]
+    finded = True
+    #print tree
+    #print
+
+
+    if (tree.label() == "SQ"):
+        (subjs, verbs, objs, statement) = answerSQ(tree)
+        finded = findMatchForSQ(subjs, verbs, objs, D)
+        #print subjs
+        #print verbs
+        #print objs
+        #print statement
+        #print
+
+        if finded:
+            return "Yes."
+        else:
+            # NEED TO CHECK STATEMENT !!!
+            return "No."
+    elif (tree.label() == "SBARQ"):
+        #print tree
+        #print
+        return "Fuck you!"
+    elif (tree.label() == "S"):
+        if (tree[0].label() == "VP"):
+            (subjs, verbs, objs, statement) = answerSQ(tree)
+            finded = findMatchForSQ(subjs, verbs, objs, D)
+            if finded:
+                return "Yes."
+            else:
+                # NEED TO CHECK STATEMENT !!!
+                return "No."
+        else:
+            return "Fuck you!"
+    else:
+        return "Fuck you!"
+
+sentences = []
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-
-# data = util.readFile("text/0.txt").decode('utf8')
-# sentences = tokenizer.tokenize(data)
+#for i in xrange(1):
+#    path = "../../test/text/q" + str(i) + ".txt"
+#    data = util.readFile(path).decode('utf8')
+#    sentences += tokenizer.tokenize(data)
 
 # (D1, D2, D3) = preprocess(sentences)
 # D = buildDatabase(D1, D2, D3)
@@ -348,3 +565,22 @@ tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # qs = util.readFile("text/questions.txt").decode('utf8')
 # questions = tokenizer.tokenize(qs)
 # print answer(questions, D)
+
+
+q0 = "Did William Herschel discover Uranus on 13 March 1781?"
+q1 = "How many stars in the constellation are visible to observation on Earth without a telescope?"
+q2 = "Which nebula resembles a person's head wearing a parka?"
+q3 = "For how long does the Sun reside in the astrological sign of Gemini each year?"
+q4 = "Approximately how many people speak English as their first language?"
+q5 = "Do the Epsilon Geminids and Orionids peak at the same time?"
+q6 = "Do the Geminids peak on November 13-14?"
+q7 = "Do you like her?"
+q8 = "Is Castor the second brightest star in Gemini?"
+q9 = "Is she beautiful?"
+q10 = "Who has been killed by the pollice?"
+q11 = "Do violin and fiddle mean the same thing?"
+q12 = "Do cellos have an endpin?"
+Q = [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12]
+
+#for q in sentences:
+#    answer(q, {})
