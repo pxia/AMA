@@ -1,7 +1,7 @@
 import nltk
 import util
 from collections import Counter
-from dependencies import tokenizer, preprocess
+from dependencies import tokenizer, preprocess, answer, buildDatabase
 from FactualStatementExtractor.factual import extractFactual
 from ask import questionGenerator
 from random import shuffle
@@ -14,8 +14,10 @@ class Article(object):
         self.tagged = [nltk.pos_tag(nltk.word_tokenize(s))
             for s in nltk.sent_tokenize(text)]
         self.factuals = extractFactual(text)
-        preprocessed = preprocess(tokenizer.tokenize(self.factuals))
+        # preprocessed = preprocess(tokenizer.tokenize(self.factuals))
         # self.D = buildDatabase(*preprocessed)
+        (D1, D2, D3) = preprocess(tokenizer.tokenize(self.factuals))
+        self.D = buildDatabase(D1, D2, D3)
 
     def sentencesContainsKeywords(self, kws):
         """"""

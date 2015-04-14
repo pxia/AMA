@@ -26,7 +26,9 @@ def answer():
     A            = Article(article)
     for question in questions:
         if len(question) != 0:
-            A.answer(question)
+            print question
+            print A.answer(question)
+            print
 
 
 # assume document is accessible within the class,
@@ -65,6 +67,3 @@ def locateKeywords(keywords):
 
     areaMemberInd = areaMemberInd[1:]
     areaMemberInd += []
-
-
-
